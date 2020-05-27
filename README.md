@@ -9,6 +9,7 @@ Notes/Problems: Fieldmap was not BIDS compatible. Per Krisanne’s instructions,
 fMRIPrep will fail if your data is not in proper BIDS format. So make sure to validate your data here: https://bids-standard.github.io/bids-validator/
 
 ## Step 3: fMRIPrep
+
 a.) Transfer BIDS folder containing all subjects to Great Lakes. Note that the greatlakes login is different than what you type to normally ssh into GL, it includes `greatlakes-xfer` instead of just `greatlakes` b/c this allows you to bypass the Duo login since you just need to put data on GL and aren't actually trying to login. 
 `rsync -av BIDS_dir/ uniqname@greatlakes-xfer.arc-ts.umich.edu:/scratch/ivytso_root/ivytso1/shared_data/SZG2/raw/ 2> transfer.err > transfer.log` The transfer.err text file will list any files that rsync failed to transfer, and the transfer.log file will list all of the files that were successfully transferred. 
 
@@ -16,7 +17,7 @@ b.) Scripts that need to be filled out are `fmriprep.master`, `fmriprep_submit.s
 
   i. `fmriprep.master` --> this script contains a lot of the necessary slurm commands (all on the lines that start with #).     It also copies the data to /tmp/ because fmriprep doesn’t like to be run on network drives and wants to be run locally     (from /tmp/). This script also copies the Freesurfer folder into the fmriprep folder (if you have pre-run Freesurfer,      which I recommend doing...running freesurfer from within fmriprep seems to hang and take forever. I found that my jobs     would often hit the wallclock limit). 
   
-  ii. `run_fmriprep_ciftioutputs.sh` --> this script points to the singularity container on Great Lakes for fmriprep version 20.0.2 It also contains all of the fmriprep options like output spaces, ignore slicetime, what kind of fieldmap       correction to do, whether or not to run ICA-AROMA, etc. For all of the fmriprep options that can be specified refer to: https://fmriprep.readthedocs.io/en/stable/usage.html
+  ii. `run_fmriprep_ciftioutputs.sh` --> this script points to the singularity container on Great Lakes for fmriprep version 20.0.4 It also contains all of the fmriprep options like output spaces, ignore slicetime, what kind of fieldmap       correction to do, whether or not to run ICA-AROMA, etc. For all of the fmriprep options that can be specified refer to: https://fmriprep.readthedocs.io/en/stable/usage.html
   
   iii. `fmriprep_submit.sh` --> this is the script that will actually submit the fmriprep jobs to run. It will submit one job per subject so that you can run lots of subjects in parallel (my record is ~11,000 at once)
   
