@@ -1,0 +1,80 @@
+#!/bin/bash
+####  Begin Slurm preamble
+
+#SBATCH --job-name=fmriprep_test1
+#SBATCH --mail-type=FAIL
+#SBATCH --nodes=1
+#SBATCH --ntasks-per-node=4
+#SBATCH --cpus-per-task=1
+#SBATCH --mem=24576m
+#SBATCH --time=80:00:00
+#SBATCH --account=ivytso1
+#SBATCH -p standard
+
+####  End Slurm preamble
+echo
+echo "STEP 1: SETUP ENVIRONMENT"
+echo
+module load fsl/6.0.1 singularity
+# Reset NTHREADS to be the number of processors available for this job
+export NTHREADS=4
+export MEMMB=24576
+
+#defined by submit script, no sub- or ses- prefixes
+#SUB
+#SESSION
+umask 0002 
+
+export SCRIPTDIR=/scratch/ivytso_root/ivytso1/shared_data/SZG2
+export ENV=~/environments/aws3/
+export FSL_DIR=/sw/arcts/centos7/fsl/6.0.1/
+export PATH=${PATH}:${SCRIPTDIR}/bin
+export OUTPUTDIR=/scratch/ivytso_root/ivytso1/shared_data/SZG2
+export LOG_DIR=${OUTPUTDIR}/logs
+
+#source /etc/profile.d/http_proxy.sh
+#set up a /tmp folder
+#mkdir -p ${LOG_DIR}/${SUB}
+echo "SCRIPTDIR: ${SCRIPTDIR}" > ${LOG_DIR}/${SUB}/01setup.log 2>&1
+echo "ENV: ${ENV}" >> ${LOG_DIR}/${SUB}/01setup.log 2>&1
+echo "FSL_DIR: ${FSL_DIR}" >> ${LOG_DIR}/${SUB}/01setup.log 2>&1
+echo "LOG_DIR: ${LOG_DIR}" >> ${LOG_DIR}/${SUB}/01setup.log 2>&1
+echo "PATH: ${PATH}" >> ${LOG_DIR}/${SUB}/01setup.log 2>&1
+echo "OUTPUTDIR: ${OUTPUTDIR}" >> ${LOG_DIR}/${SUB}/01setup.log 2>&1
+echo "NTHREADS: $NTHREADS" >> ${LOG_DIR}/${SUB}/01setup.log 2>&1
+echo "MEMMB: ${MEMMB}" >> ${LOG_DIR}/${SUB}/01setup.log 2>&1
+module list >> ${LOG_DIR}/${SUB}/01setup.log 2>&1
+
+if [[ -d /tmp/workflow_${SUB} ]]; then
+    rm -rf /tmp/workflow_${SUB}
+fi
+
+mkdir /tmp/workflow_${SUB}
+cd /tmp/workflow_${SUB}
+echo "Working from $PWD"
+mkdir BIDS
+cp -r /scratch/ivytso_root/ivytso1/shared_data/SZG2/raw/sub-${SUB}/ /tmp/workflow_${SUB}/BIDS/sub-${SUB}
+cp /scratch/ivytso_root/ivytso1/shared_data/SZG2/raw/task*.json /tmp/workflow_${SUB}/BIDS/
+mkdir derivatives
+cd derivatives
+mkdir freesurfer
+cd ../
+cp -r /scratch/ivytso_root/ivytso1/shared_data/SZG2/FS/output/sub-${SUB}/ /tmp/workflow_${SUB}/derivatives/freesurfer/
+cp -r /scratch/ivytso_root/ivytso1/shared_data/SZG2/fsaverage /tmp/workflow_${SUB}/derivatives/freesurfer/
+echo
+echo "STEP 6: FMRIPREP"
+echo
+#fmriprep
+${SCRIPTDIR}/code/run_fmriprep_ciftioutputs.sh > ${LOG_DIR}/${SUB}/06fmriprep.log 2>&1
+
+echo
+echo "STEP 7: CLEANUP"
+echo
+#cleanup
+${SCRIPTDIR}/code/cleanup.sh > ${LOG_DIR}/${SUB}/07cleanup.log 2>&1
+if [ ! $? -eq 0 ]; then
+    echo "STEP 7: FAILED"
+    exit 0
+fi
+
+

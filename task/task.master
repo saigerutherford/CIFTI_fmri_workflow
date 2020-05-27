@@ -1,0 +1,153 @@
+#!/bin/bash -l
+####  Begin Slurm preamble
+
+#SBATCH --job-name=fmriprep_test1
+#SBATCH --mail-type=FAIL
+#SBATCH --nodes=1
+#SBATCH --ntasks-per-node=1
+#SBATCH --cpus-per-task=1
+#SBATCH --mem=4096m
+#SBATCH --time=4:00:00
+#SBATCH --account=sripada1
+#SBATCH -p standard
+
+####  End Slurm preamble
+echo
+echo "STEP 1: SETUP ENVIRONMENT"
+echo
+module load fsl/6.0.1
+module load R/3.6.1
+module load freesurfer/6.0.0
+
+# Reset NTHREADS to be the number of processors available for this job
+export NTHREADS=1
+export MEMMB=4096
+
+#defined by submit script, no sub- or ses- prefixes
+#SUB
+#SESSION
+#TASK
+umask 0002 
+
+export SCRIPTDIR=/scratch/sripada_root/sripada/shared_data/workflow
+export ENV=~/environments/aws3/
+export DCM2BIDS_CFG=${SCRIPTDIR}/data/abcd_dcm2bids.conf
+export FSL_DIR=/sw/arcts/centos7/fsl/6.0.1/
+export PATH=${PATH}:${SCRIPTDIR}/bin
+export OUTPUTDIR=/scratch/sripada_root/sripada/shared_data/workflow/
+export LOG_DIR=${OUTPUTDIR}/logs/${TASK}
+
+export HCPPIPEDIR=${SCRIPTDIR}/HCPpipelines/
+export CARET7DIR=${SCRIPTDIR}/bin/workbench/bin_rh_linux64
+export OPENBLAS_NUM_THREADS=1
+
+export PATH=${PATH}:${CARET7DIR}
+
+#set up a /tmp folder
+mkdir -p ${LOG_DIR}/${SUB}/${SESSION}/
+
+echo "SCRIPTDIR: ${SCRIPTDIR}" > ${LOG_DIR}/${SUB}/${SESSION}/01setup.log 2>&1
+echo "ENV: ${ENV}" >> ${LOG_DIR}/${SUB}/${SESSION}/01setup.log 2>&1
+echo "DCM2BIDS_CFG: ${DCM2BIDS_CFG}" >> ${LOG_DIR}/${SUB}/${SESSION}/01setup.log 2>&1
+echo "FSL_DIR: ${FSL_DIR}" >> ${LOG_DIR}/${SUB}/${SESSION}/01setup.log 2>&1
+echo "LOG_DIR: ${LOG_DIR}" >> ${LOG_DIR}/${SUB}/${SESSION}/01setup.log 2>&1
+echo "PATH: ${PATH}" >> ${LOG_DIR}/${SUB}/${SESSION}/01setup.log 2>&1
+echo "OUTPUTDIR: ${OUTPUTDIR}" >> ${LOG_DIR}/${SUB}/${SESSION}/01setup.log 2>&1
+echo "NTHREADS: $NTHREADS" >> ${LOG_DIR}/${SUB}/${SESSION}/01setup.log 2>&1
+echo "MEMMB: ${MEMMB}" >> ${LOG_DIR}/${SUB}/${SESSION}/01setup.log 2>&1
+module list >> ${LOG_DIR}/${SUB}/${SESSION}/01setup.log 2>&1
+
+if [[ -d /tmp/workflow_${SUB} ]]; then
+    rm -rf /tmp/workflow_${SUB}
+fi
+
+mkdir /tmp/workflow_${SUB}
+cd /tmp/workflow_${SUB}
+echo "Working from $PWD"
+
+source ${ENV}/bin/activate
+
+echo
+echo "STEP 2: DOWNLOADING"
+echo
+#download subject
+#think we're going to need some logic in this script to deal with different output folders of different scanners
+${SCRIPTDIR}/code/cp_bash.sh > ${LOG_DIR}/${SUB}/${SESSION}/02download.log 2>&1
+if [ ! $? -eq 0 ]; then
+    echo "STEP 2: FAILED"
+    exit 0
+fi
+
+echo
+echo "STEP 3: DCM2BIDS"
+echo
+#dcm2bids
+${SCRIPTDIR}/code/dcm2bids.sh > ${LOG_DIR}/${SUB}/${SESSION}/03dcm2bids.log 2>&1
+if [ ! $? -eq 0 ]; then
+    echo "STEP 3: FAILED"
+    exit 0
+fi
+
+echo
+echo "STEP 4: FIELDMAP"
+echo
+#fieldmaps
+${SCRIPTDIR}/src/unpack_and_setup.sh sub-${SUB} ses-${SESSION} > ${LOG_DIR}/${SUB}/${SESSION}/04unpack.log 2>&1
+if [ ! $? -eq 0 ]; then 
+    echo "STEP 4: FAILED"
+    exit 0
+fi
+
+echo
+echo "STEP 5: JSON CORRECTIONS"
+echo
+#final json corrections
+${SCRIPTDIR}/src/correct_jsons.py /tmp/workflow_${SUB}/BIDS > ${LOG_DIR}/${SUB}/${SESSION}/05correct.log 2>&1
+if [ ! $? -eq 0 ]; then 
+    echo "STEP 5: FAILED"
+    exit 0
+fi
+
+echo
+echo "STEP 6: MAKING EV FILES"
+echo
+#make EV files from eprime
+${SCRIPTDIR}/code/make_EV.sh > ${LOG_DIR}/${SUB}/${SESSION}/06ev.log 2>&1
+if [ ! $? -eq 0 ]; then
+    echo "STEP 6: FAILED"
+    exit 0
+fi
+
+
+${SCRIPTDIR}/code/check_errors_task.sh 
+if [ ! $? -eq 0 ]; then
+    echo "ERRORS PRIOR TO TASK MODELING"
+    exit 0
+fi
+
+
+echo
+echo "STEP 7: TASK LEVEL 1"
+echo
+#fmriprep
+${SCRIPTDIR}/code/run_level1.sh 2 200 1 0 0 0 1 0.5 5 > ${LOG_DIR}/${SUB}/${SESSION}/07level1.log 2>&1
+#arguments are smooth_fwhm temporal_filter_seconds includeMotion includeCompCor includeCensoe includeCosine includeAROMA FDthresh number_of_PC_for_compcor
+
+
+
+echo
+echo "STEP 8: TASK LEVEL 2"
+echo
+${SCRIPTDIR}/code/run_level2.sh 2 200 > ${LOG_DIR}/${SUB}/${SESSION}/08level2.log 2>&1
+
+echo
+echo "STEP 9: CLEANUP"
+echo
+#cleanup
+${SCRIPTDIR}/code/cleanup_task.sh > ${LOG_DIR}/${SUB}/${SESSION}/09cleanup.log 2>&1
+if [ ! $? -eq 0 ]; then
+    echo "STEP 9: FAILED"
+    exit 0
+fi
+
+
