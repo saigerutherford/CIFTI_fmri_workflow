@@ -31,7 +31,7 @@ To run the script from a Great Lakes terminal (in whatever directory the `fmripr
 fMRIPrep outputs a HTML file that can be used to QC all steps of preprocessing. This should be done for each run, for each subject. 
 
 ## Step 5: Connectivity 
-To create resting state and task connectivity matrices I used the scripts in the connectivity folder. These are MATLAB scripts that will regress out all of your confounds in a single step, and can also remove volumes from the time-series if this wasn't done already. 
+To create resting state and task connectivity matrices I used the scripts in the connectivity folder. These are MATLAB scripts that will regress out all of your confounds in a single step, and can also remove volumes from the time-series if this wasn't done already. You will need the GIFTI MATLAB toolbox which is a part of the HCPpipelines Github (https://github.com/Washington-University/HCPpipelines/tree/master/global/matlab/gifti-1.6). More documentation to use these scripts coming soon. 
 
 ## Step 6: Task
 You will need to clone the HCP pipelines GitHub repo (https://github.com/Washington-University/HCPpipelines) to get some of their scripts for the task analysis. You will also need to have connectome workbench & FSL installed...More details on how to run these scripts coming soon.
