@@ -34,7 +34,8 @@ fMRIPrep outputs a HTML file that can be used to QC all steps of preprocessing. 
 To create resting state and task connectivity matrices I used the scripts in the connectivity folder. These are MATLAB scripts that will regress out all of your confounds in a single step, and can also remove volumes from the time-series if this wasn't done already. 
 
 ## Step 6: Task
-You will need to clone the HCP pipelines GitHub repo (https://github.com/Washington-University/HCPpipelines) to get some of their scripts for the task analysis. You will also need to have connectome workbench & FSL installed.
+You will need to clone the HCP pipelines GitHub repo (https://github.com/Washington-University/HCPpipelines) to get some of their scripts for the task analysis. You will also need to have connectome workbench & FSL installed...More details on how to run these scripts coming soon.
+
 a.) Prep (fsf template)
 
 b.) Run-level modeling
