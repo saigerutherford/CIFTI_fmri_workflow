@@ -9,8 +9,8 @@ Notes/Problems: Fieldmap was not BIDS compatible. Per Krisanne’s instructions,
 fMRIPrep will fail if your data is not in proper BIDS format. So make sure to validate your data here: https://bids-standard.github.io/bids-validator/
 
 ## Step 3: fMRIPrep
-a.) Transfer BIDS folder containing all subjects to Great Lakes. Note that the greatlakes login is different than what you type to normally ssh in...it includes greatlakes-xfer b/c this allows you to bypass the Duo login since you just need to put data on GL and aren't actually trying to login. 
-`rsync -av BIDS_dir/ uniqname@greatlakes-xfer.arc-ts.umich.edu:/scratch/ivytso_root/ivytso1/shared_data/SZG2/raw/ 2> transfer.err > transfer.log`
+a.) Transfer BIDS folder containing all subjects to Great Lakes. Note that the greatlakes login is different than what you type to normally ssh into GL, it includes `greatlakes-xfer` instead of just `greatlakes` b/c this allows you to bypass the Duo login since you just need to put data on GL and aren't actually trying to login. 
+`rsync -av BIDS_dir/ uniqname@greatlakes-xfer.arc-ts.umich.edu:/scratch/ivytso_root/ivytso1/shared_data/SZG2/raw/ 2> transfer.err > transfer.log` The transfer.err text file will list any files that rsync failed to transfer, and the transfer.log file will list all of the files that were successfully transferred. 
 
 b.) Scripts that need to be filled out are `fmriprep.master`, `fmriprep_submit.sh`, `run_fmriprep_ciftioutputs.sh`, & `cleanup.sh`
 
@@ -24,7 +24,7 @@ b.) Scripts that need to be filled out are `fmriprep.master`, `fmriprep_submit.s
 You will also need a subject list text file called `good_subs.txt` (stored in a sub-directory `data/good_subs.txt`).
 Before running the script, you need to make sure the directories exist for `Logs/` & `Results/` (otherwise the jobs will not be copied back correctly after they run. 
 
-To run the script from a Great Lakes terminal (in whatever directory the `fmriprep_submit.sh` script lives) type: `./fmriprep_submit.sh 1 2` The 1 & 2 refer to the line numbers of `good_subs.txt`. This would run fmriprep for the first and second subjects in `good_subs.txt`. If you wanted to run the first 10 subjects in `good_subs.txt` you would type: `./fmriprep_submit.sh 1 10`. I suggest testing it out with a small number of subjects to make sure your script is working correctly before you run it on lots of subjects and potentially waste a bunch of money.
+To run the script from a Great Lakes terminal (in whatever directory the `fmriprep_submit.sh` script lives) type: `./fmriprep_submit.sh 1 2` The 1 & 2 refer to the line numbers of `good_subs.txt`. This would run fmriprep for the first and second subjects in `good_subs.txt`. If you wanted to run the first 10 subjects in `good_subs.txt` you would type: `./fmriprep_submit.sh 1 10`. I suggest testing it out with a small number of subjects to make sure your script is working correctly before you run it on lots of subjects and potentially waste a bunch of money. You will also need to have a freesurfer license (which you can get here: https://surfer.nmr.mgh.harvard.edu/registration.html) in the `data/` folder and make sure that the `run_fmriprep_ciftioutputs.sh` script points to the correct location for your freesurfer license. 
 
 ## Step 4: Quality check
 fMRIPrep outputs a HTML file that can be used to QC all steps of preprocessing. This should be done for each run, for each subject. 
@@ -33,6 +33,7 @@ fMRIPrep outputs a HTML file that can be used to QC all steps of preprocessing. 
 To create resting state and task connectivity matrices I used the scripts in the connectivity folder. These are MATLAB scripts that will regress out all of your confounds in a single step, and can also remove volumes from the time-series if this wasn't done already. 
 
 ## Step 6: Task
+You will need to clone the HCP pipelines GitHub repo (https://github.com/Washington-University/HCPpipelines) to get some of their scripts for the task analysis. You will also need to have connectome workbench & FSL installed.
 a.) Prep (fsf template)
 
 b.) Run-level modeling
