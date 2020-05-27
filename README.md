@@ -15,7 +15,7 @@ a.) Transfer BIDS folder containing all subjects to Great Lakes. Note that the g
 
 b.) Scripts that need to be filled out are `fmriprep.master`, `fmriprep_submit.sh`, `run_fmriprep_ciftioutputs.sh`, & `cleanup.sh`
 
-  i. `fmriprep.master` --> this script contains a lot of the necessary slurm commands (all on the lines that start with #).     It also copies the data to /tmp/ because fmriprep doesn’t like to be run on network drives and wants to be run locally     (from /tmp/). This script also copies the Freesurfer folder into the fmriprep folder (if you have pre-run Freesurfer,      which I recommend doing...running freesurfer from within fmriprep seems to hang and take forever. I found that my jobs     would often hit the wallclock limit). 
+i. `fmriprep.master` --> this script contains a lot of the necessary slurm commands (all on the lines that start with #SBATCH) which you will need to edit to match your needs. This script copies the data from `/scratch/` to `/tmp/` because fmriprep doesn’t like to be run on network drives and wants to be run locally from /tmp/). This script also copies the Freesurfer folder into the fmriprep folder (if you have pre-run Freesurfer, which I recommend doing because running freesurfer from within fmriprep seems to hang and take forever. I found that my jobs would often hit the wallclock limit). 
   
   ii. `run_fmriprep_ciftioutputs.sh` --> this script points to the singularity container on Great Lakes for fmriprep version 20.0.4 It also contains all of the fmriprep options like output spaces, ignore slicetime, what kind of fieldmap       correction to do, whether or not to run ICA-AROMA, etc. For all of the fmriprep options that can be specified refer to: https://fmriprep.readthedocs.io/en/stable/usage.html
   
@@ -23,7 +23,7 @@ b.) Scripts that need to be filled out are `fmriprep.master`, `fmriprep_submit.s
   
   iv. `cleanup.sh` --> this script copies the data from `/tmp/` back to `/scratch/` after fMRIPrep has finished running. 
 You will also need a subject list text file called `good_subs.txt` (stored in a sub-directory `data/good_subs.txt`).
-Before running the script, you need to make sure the directories exist for `Logs/` & `Results/` (otherwise the jobs will not be copied back correctly after they run. 
+Before running the script, you need to make sure the directories exist for `logs/` & `results/` (otherwise the jobs will not be copied back correctly after they run. 
 
 To run the script from a Great Lakes terminal (in whatever directory the `fmriprep_submit.sh` script lives) type: `./fmriprep_submit.sh 1 2` The 1 & 2 refer to the line numbers of `good_subs.txt`. This would run fmriprep for the first and second subjects in `good_subs.txt`. If you wanted to run the first 10 subjects in `good_subs.txt` you would type: `./fmriprep_submit.sh 1 10`. I suggest testing it out with a small number of subjects to make sure your script is working correctly before you run it on lots of subjects and potentially waste a bunch of money. You will also need to have a freesurfer license (which you can get here: https://surfer.nmr.mgh.harvard.edu/registration.html) in the `data/` folder and make sure that the `run_fmriprep_ciftioutputs.sh` script points to the correct location for your freesurfer license. 
 
